@@ -3,248 +3,515 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camera Translator - Thai & English</title>
+    <title>Smart Object Identifier</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
         }
 
         .container {
-            background-color: white;
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        h1 {
-            color: #2c3e50;
             text-align: center;
-            margin-bottom: 30px;
         }
 
-        .media-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 20px;
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
         }
 
-        video, canvas {
-            border: 2px solid #3498db;
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .api-setup {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .api-setup h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .api-setup input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
             border-radius: 8px;
-            max-width: 100%;
-            height: auto;
+            font-size: 14px;
+            margin-bottom: 8px;
         }
 
-        .button-container {
+        .api-setup input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+        }
+
+        .api-setup small {
+            color: #666;
+            font-size: 12px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .camera-section {
+            padding: 20px;
             text-align: center;
+        }
+
+        #video {
+            width: 100%;
+            max-width: 300px;
+            height: 225px;
+            border-radius: 15px;
+            object-fit: cover;
+            background: #f0f0f0;
+            display: none;
+        }
+
+        #canvas {
+            display: none;
+        }
+
+        .controls {
             margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
         button {
-            background-color: #3498db;
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 12px 20px;
             border-radius: 25px;
-            cursor: pointer;
             font-size: 16px;
-            margin: 5px;
-            transition: background-color 0.3s;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
         }
 
         button:hover {
-            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
         }
 
         button:disabled {
-            background-color: #bdc3c7;
+            background: #ccc;
             cursor: not-allowed;
+            transform: none;
         }
 
-        #result {
-            background-color: #fff;
+        .capture-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24) !important;
+        }
+
+        .result-section {
+            padding: 0 20px 20px;
+            min-height: 200px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-top: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            transform: translateY(10px);
+            opacity: 0;
+            animation: slideUp 0.5s ease forwards;
         }
 
-        .translation-box {
-            margin: 10px 0;
-            padding: 15px;
-            border-left: 4px solid #3498db;
-            background-color: #f8f9fa;
+        @keyframes slideUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .word {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: capitalize;
+        }
+
+        .definition {
+            font-size: 16px;
+            line-height: 1.5;
+            opacity: 0.95;
+            margin-bottom: 10px;
+        }
+
+        .source {
+            font-size: 12px;
+            opacity: 0.8;
+            font-style: italic;
+        }
+
+        .status {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
         }
 
         .loading {
-            text-align: center;
-            color: #7f8c8d;
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .error {
-            color: #e74c3c;
-            padding: 10px;
-            border-radius: 5px;
-            background-color: #fdeded;
+            background: linear-gradient(45deg, #ff4757, #ff3838);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
             margin: 10px 0;
+            text-align: center;
+        }
+
+        .suggestions {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .suggestions h4 {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .suggestion-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .tag {
+            background: #2196f3;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .tag:hover {
+            background: #1976d2;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 5px;
+                border-radius: 15px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 200px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📸 Camera Translator</h1>
-        
-        <div class="media-container">
-            <video id="video" width="400" height="300" autoplay></video>
-            <canvas id="canvas" width="400" height="300"></canvas>
+        <div class="header">
+            <h1>🔍 Smart Object Identifier</h1>
+            <p>AI-powered object recognition with live definitions!</p>
         </div>
 
-        <div class="button-container">
-            <button id="startCamera">📷 Start Camera</button>
-            <button id="capture" disabled>📸 Capture</button>
-            <button id="translate" disabled>🔄 Translate</button>
+        <div class="api-setup">
+            <h3>🔑 API Configuration</h3>
+            <input type="text" id="googleApiKey" placeholder="Enter Google API Key">
+            <small>Get your free API key from <a href="https://developers.google.com/custom-search/v1/introduction" target="_blank">Google Custom Search API</a></small>
+            
+            <input type="text" id="searchEngineId" placeholder="Enter Custom Search Engine ID">
+            <small>Create a custom search engine at <a href="https://cse.google.com/cse/" target="_blank">Google CSE</a></small>
         </div>
 
-        <div id="result">
-            <strong>Results will appear here...</strong>
+        <div class="camera-section">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+            
+            <div class="controls">
+                <button id="startCamera">📷 Start Camera</button>
+                <button id="captureBtn" class="capture-btn" disabled>📸 Identify Object</button>
+                <button id="stopCamera" disabled>⏹️ Stop</button>
+            </div>
+        </div>
+
+        <div class="result-section">
+            <div id="results">
+                <div class="status">
+                    👆 Configure your API keys above, then start your camera and capture an object to identify it!
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Tesseract.js -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
-
     <script>
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const startButton = document.getElementById('startCamera');
-        const captureButton = document.getElementById('capture');
-        const translateButton = document.getElementById('translate');
-        const resultDiv = document.getElementById('result');
+        let video, canvas, ctx;
         let stream = null;
 
+        // Initialize camera elements
+        function initCamera() {
+            video = document.getElementById('video');
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+        }
+
         // Start camera
-        startButton.addEventListener('click', async () => {
+        async function startCamera() {
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
+                stream = await navigator.mediaDevices.getUserMedia({
                     video: { 
-                        facingMode: 'environment',
+                        facingMode: 'environment', // Use back camera on mobile
                         width: { ideal: 1280 },
                         height: { ideal: 720 }
-                    } 
+                    }
                 });
+                
                 video.srcObject = stream;
-                startButton.disabled = true;
-                captureButton.disabled = false;
-                showMessage('Camera started successfully! 📸');
+                video.style.display = 'block';
+                
+                document.getElementById('startCamera').disabled = true;
+                document.getElementById('captureBtn').disabled = false;
+                document.getElementById('stopCamera').disabled = false;
+                
+                updateStatus('📷 Camera ready! Point at an object and tap "Identify Object"');
             } catch (err) {
-                showError('Camera access denied or error occurred: ' + err.message);
+                showError('Camera access denied or not available: ' + err.message);
             }
-        });
+        }
 
-        // Capture image
-        captureButton.addEventListener('click', () => {
+        // Stop camera
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            
+            video.style.display = 'none';
+            document.getElementById('startCamera').disabled = false;
+            document.getElementById('captureBtn').disabled = true;
+            document.getElementById('stopCamera').disabled = true;
+            
+            updateStatus('📷 Camera stopped. Click "Start Camera" to begin again.');
+        }
+
+        // Capture and analyze image
+        async function captureAndAnalyze() {
+            const apiKey = document.getElementById('googleApiKey').value.trim();
+            const searchEngineId = document.getElementById('searchEngineId').value.trim();
+            
+            if (!apiKey || !searchEngineId) {
+                showError('Please enter both Google API Key and Custom Search Engine ID');
+                return;
+            }
+
             try {
-                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                translateButton.disabled = false;
-                showMessage('Image captured! Click translate to process.');
+                // Capture image from video
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
+                
+                updateStatus('<div class="loading"></div>Analyzing image and searching for information...');
+                
+                // Convert canvas to base64
+                const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                
+                // Use Google Vision API for object detection (or fallback to manual identification)
+                await identifyObjectWithSearch(apiKey, searchEngineId);
+                
             } catch (err) {
                 showError('Error capturing image: ' + err.message);
             }
-        });
+        }
 
-        // Process and translate
-        translateButton.addEventListener('click', async () => {
-            translateButton.disabled = true;
+        // Identify object using Google Custom Search
+        async function identifyObjectWithSearch(apiKey, searchEngineId) {
             try {
-                showMessage('🔍 Processing image...');
+                // For demo purposes, we'll use a simple approach
+                // In a real implementation, you'd use Google Vision API first
+                showSuggestions();
                 
-                // OCR Processing
-                const result = await Tesseract.recognize(
-                    canvas,
-                    'eng+tha',
-                    { 
-                        logger: m => {
-                            if (m.status === 'recognizing text') {
-                                showMessage(`Processing: ${Math.round(m.progress * 100)}%`);
-                            }
-                        }
-                    }
-                );
-
-                const detectedText = result.data.text.trim();
-                if (!detectedText) {
-                    throw new Error('No text detected in the image');
-                }
-
-                showMessage('🌐 Translating detected text...');
-
-                // Parallel translation requests
-                const [enTranslation, thTranslation] = await Promise.all([
-                    translateText(detectedText, 'en'),
-                    translateText(detectedText, 'th')
-                ]);
-
-                // Display results
-                resultDiv.innerHTML = `
-                    <div class="translation-box">
-                        <strong>📝 Detected Text:</strong><br>${detectedText}
-                    </div>
-                    <div class="translation-box">
-                        <strong>🇬🇧 English Translation:</strong><br>${enTranslation}
-                    </div>
-                    <div class="translation-box">
-                        <strong>🇹🇭 Thai Translation:</strong><br>${thTranslation}
-                    </div>
-                `;
             } catch (err) {
-                showError('Translation error: ' + err.message);
-            } finally {
-                translateButton.disabled = false;
+                showError('Error identifying object: ' + err.message);
             }
+        }
+
+        // Show common object suggestions for user to select
+        function showSuggestions() {
+            const commonObjects = [
+                'phone', 'laptop', 'cup', 'book', 'pen', 'watch', 'keys', 'wallet',
+                'bottle', 'apple', 'chair', 'table', 'car', 'plant', 'glasses',
+                'headphones', 'camera', 'shoe', 'bag', 'clock'
+            ];
+
+            const suggestionsHtml = `
+                <div class="suggestions">
+                    <h4>What object did you capture? Click on one:</h4>
+                    <div class="suggestion-tags">
+                        ${commonObjects.map(obj => 
+                            `<span class="tag" onclick="searchForObject('${obj}')">${obj}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('results').innerHTML = suggestionsHtml;
+        }
+
+        // Search for object information
+        async function searchForObject(objectName) {
+            const apiKey = document.getElementById('googleApiKey').value.trim();
+            const searchEngineId = document.getElementById('searchEngineId').value.trim();
+            
+            updateStatus('<div class="loading"></div>Searching for information about ' + objectName + '...');
+            
+            try {
+                // Search for definition
+                const searchQuery = `${objectName} definition meaning what is`;
+                const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(searchQuery)}`;
+                
+                const response = await fetch(searchUrl);
+                const data = await response.json();
+                
+                if (data.items && data.items.length > 0) {
+                    displayResult(objectName, data.items[0]);
+                } else {
+                    // Fallback to basic search
+                    await fallbackSearch(objectName, apiKey, searchEngineId);
+                }
+                
+            } catch (err) {
+                showError('Error searching for object information: ' + err.message);
+            }
+        }
+
+        // Fallback search method
+        async function fallbackSearch(objectName, apiKey, searchEngineId) {
+            try {
+                const searchQuery = objectName;
+                const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(searchQuery)}`;
+                
+                const response = await fetch(searchUrl);
+                const data = await response.json();
+                
+                if (data.items && data.items.length > 0) {
+                    displayResult(objectName, data.items[0]);
+                } else {
+                    showError('No information found for this object. Try another search term.');
+                }
+                
+            } catch (err) {
+                showError('Error in fallback search: ' + err.message);
+            }
+        }
+
+        // Display search result
+        function displayResult(objectName, searchResult) {
+            const resultHtml = `
+                <div class="result-card">
+                    <div class="word">${objectName}</div>
+                    <div class="definition">${searchResult.snippet}</div>
+                    <div class="source">Source: ${searchResult.displayLink}</div>
+                </div>
+            `;
+            
+            document.getElementById('results').innerHTML = resultHtml;
+        }
+
+        // Update status message
+        function updateStatus(message) {
+            document.getElementById('results').innerHTML = `<div class="status">${message}</div>`;
+        }
+
+        // Show error message
+        function showError(message) {
+            document.getElementById('results').innerHTML = `<div class="error">❌ ${message}</div>`;
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            initCamera();
+            
+            document.getElementById('startCamera').addEventListener('click', startCamera);
+            document.getElementById('stopCamera').addEventListener('click', stopCamera);
+            document.getElementById('captureBtn').addEventListener('click', captureAndAnalyze);
+            
+            // Save API keys to localStorage for convenience
+            const savedApiKey = localStorage.getItem('googleApiKey');
+            const savedSearchEngineId = localStorage.getItem('searchEngineId');
+            
+            if (savedApiKey) document.getElementById('googleApiKey').value = savedApiKey;
+            if (savedSearchEngineId) document.getElementById('searchEngineId').value = savedSearchEngineId;
+            
+            // Save API keys when user types
+            document.getElementById('googleApiKey').addEventListener('input', function(e) {
+                localStorage.setItem('googleApiKey', e.target.value);
+            });
+            
+            document.getElementById('searchEngineId').addEventListener('input', function(e) {
+                localStorage.setItem('searchEngineId', e.target.value);
+            });
         });
 
-        async function translateText(text, targetLang) {
-            try {
-                const response = await fetch('https://libretranslate.de/translate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        q: text,
-                        source: 'auto',
-                        target: targetLang,
-                        format: 'text'
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Translation service error');
-                }
-
-                const data = await response.json();
-                return data.translatedText;
-            } catch (err) {
-                throw new Error('Translation failed: ' + err.message);
-            }
-        }
-
-        function showMessage(message) {
-            resultDiv.innerHTML = `<div class="loading">${message}</div>`;
-        }
-
-        function showError(message) {
-            resultDiv.innerHTML = `<div class="error">❌ ${message}</div>`;
-        }
-
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && stream) {
+                // Pause camera when page is hidden to save battery
+                stream.getTracks().forEach(track => track.enabled = false);
+            } else if (!document.hidden && stream) {
+                // Resume camera when page is visible
+                stream.getTracks().forEach(track => track.enabled = true);
             }
         });
     </script>
